@@ -591,12 +591,12 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		// 講義一覧の取得
 		var classes []ClassByCount
 		query = "SELECT " +
-			"classes.id AS id, classes.course_id, classes.part,classes.title,classes.description,classes.submission_closed,COUNT(DISTINCT submissions.user_id) AS count_submissions" +
-			"FROM `classes`" +
-			"LEFT JOIN submissions ON submissions.class_id = classes.id" +
-			"WHERE `course_id` = ?" +
-			"GROUP BY classes.id, classes.course_id, classes.part,classes.title,classes.description,classes.submission_closed" +
-			"ORDER BY classes.part DESC;"
+			"`classes`.*,COUNT(DISTINCT `submissions.user_id`) AS count_submissions " +
+			"FROM `classes` " +
+			"LEFT JOIN `submissions` ON `submissions`.`class_id` = `classes`.`id` " +
+			"WHERE `course_id` = ? " +
+			"GROUP BY classes.id, classes.course_id, classes.part,classes.title,classes.description,classes.submission_closed " +
+			"ORDER BY classes.part DESC "
 		if err := h.DB.Select(&classes, query, course.ID); err != nil {
 			c.Logger().Error(err)
 			return c.NoContent(http.StatusInternalServerError)
