@@ -1290,28 +1290,17 @@ type Submission struct {
 func (h *handlers) DownloadSubmittedAssignments(c echo.Context) error {
 	classID := c.Param("classID")
 
-	tx, err := h.DB.Beginx()
-	if err != nil {
-		c.Logger().Error(err)
-		return c.NoContent(http.StatusInternalServerError)
-	}
-	defer tx.Rollback()
-
-	if _, err := tx.Exec("UPDATE `classes` SET `submission_closed` = true WHERE `id` = ?", classID); err != nil {
+	if _, err := h.DB.NamedExec("UPDATE `classes` SET `submission_closed` = true WHERE `id` = ?", classID); err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
 	var classCount int
-	if err := tx.Get(&classCount, "SELECT COUNT(*) FROM `classes` WHERE `id` = ?", classID); err != nil {
+	if err := h.DB.Get(&classCount, "SELECT COUNT(*) FROM `classes` WHERE `id` = ?", classID); err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
 
-	if err := tx.Commit(); err != nil {
-		c.Logger().Error(err)
-		return c.NoContent(http.StatusInternalServerError)
-	}
 
 	if classCount == 0 {
 		return c.String(http.StatusNotFound, "No such class.")
