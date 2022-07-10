@@ -583,6 +583,22 @@ func (h *handlers) GetGrades(c echo.Context) error {
 	for _, c := range classes {
 		courseClassesMap[c.CourseID] = append(courseClassesMap[c.CourseID], c)
 	}
+	// 回答数
+	classSubmissionCountMap := map[string]int{}
+	rows, err := h.DB.Queryx("SELECT class_id, COUNT(*) AS submission_count FROM submissions GROUP BY class_id")
+	if err != nil {
+		c.Logger().Error(err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+	for rows.Next() {
+		var classId string
+		var submissionCount int
+		if err := rows.Scan(&classId, &submissionCount); err != nil {
+			c.Logger().Error(err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+		classSubmissionCountMap[classId] = submissionCount
+	}
 
 	// 科目毎の成績計算処理
 	courseResults := make([]CourseResult, 0, len(registeredCourses))
@@ -595,11 +611,7 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		classScores := make([]ClassScore, 0, len(classes))
 		var myTotalScore int
 		for _, class := range classes {
-			var submissionsCount int
-			if err := h.DB.Get(&submissionsCount, "SELECT COUNT(*) FROM `submissions` WHERE `class_id` = ?", class.ID); err != nil {
-				c.Logger().Error(err)
-				return c.NoContent(http.StatusInternalServerError)
-			}
+			submissionsCount := classSubmissionCountMap[class.ID]
 
 			var myScore sql.NullInt64
 			if err := h.DB.Get(&myScore, "SELECT `submissions`.`score` FROM `submissions` WHERE `user_id` = ? AND `class_id` = ?", userID, class.ID); err != nil && err != sql.ErrNoRows {
