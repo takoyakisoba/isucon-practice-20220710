@@ -9,11 +9,11 @@ stop-services:
 	sudo systemctl stop nginx
 	sudo systemctl stop isucholar.go.service
 	ssh isucon@172.31.20.102 "sudo systemctl stop isucholar.go.service"
-	scp go/isucholar isucon@172.31.20.102:/home/isucon/webapp/go/isucholar
 	ssh isucon@172.31.23.8 "sudo systemctl stop mysql"
 
 start-services:
 	ssh isucon@172.31.23.8 "sudo systemctl start mysql"
+	scp go/isucholar isucon@172.31.20.102:/home/isucon/webapp/go/isucholar
 	ssh isucon@172.31.20.102 "sudo systemctl start isucholar.go.service"
 	sudo systemctl start isucholar.go.service
 	sudo systemctl start nginx
