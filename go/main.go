@@ -1290,7 +1290,7 @@ type Submission struct {
 func (h *handlers) DownloadSubmittedAssignments(c echo.Context) error {
 	classID := c.Param("classID")
 
-	if _, err := h.DB.NamedExec("UPDATE `classes` SET `submission_closed` = true WHERE `id` = ?", classID); err != nil {
+	if _, err := h.DB.Exec("UPDATE `classes` SET `submission_closed` = true WHERE `id` = ?", classID); err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
@@ -1300,7 +1300,6 @@ func (h *handlers) DownloadSubmittedAssignments(c echo.Context) error {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
-
 
 	if classCount == 0 {
 		return c.String(http.StatusNotFound, "No such class.")
