@@ -28,7 +28,6 @@ bench:
 
 save-log: TS=$(shell date "+%Y%m%d_%H%M%S")
 save-log:
-	mkdir /home/isucon/logs
 	mkdir /home/isucon/logs/$(TS)
 	sudo  cp -p /var/log/nginx/access.log  /home/isucon/logs/$(TS)/access.log
 	ssh isucon@172.31.23.8 "sudo  cp -p /var/log/mysql/mysql-slow.log /home/isucon/mysql-slow.log && sudo chmod -R 777 mysql-slow.log"
