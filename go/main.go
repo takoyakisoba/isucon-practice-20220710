@@ -679,7 +679,7 @@ func (h *handlers) GetGrades(c echo.Context) error {
 	}
 	var scoreByUser []ScoreByUser
 	query = "SELECT `submissions`.`user_id` AS `user_id`, IFNULL(SUM(`submissions`.`score` * c2.`credit`), 0) AS score_total FROM `submissions` JOIN classes c on submissions.class_id = c.id JOIN courses c2 on c.course_id = c2.id AND c2.`status`='closed' GROUP BY `submissions`.`user_id`;"
-	if err := h.DB.Select(&scoreByUser, query, StatusClosed, StatusClosed, Student); err != nil {
+	if err := h.DB.Select(&scoreByUser, query); err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
