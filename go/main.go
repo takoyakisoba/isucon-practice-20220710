@@ -58,6 +58,9 @@ func main() {
 
 	e.POST("/login", h.Login)
 	e.POST("/logout", h.Logout)
+	// キャッシュの初期化
+	CacheSubmissions = map[string]ClassScore{}
+
 	API := e.Group("/api", h.IsLoggedIn)
 	{
 		usersAPI := API.Group("/users")
