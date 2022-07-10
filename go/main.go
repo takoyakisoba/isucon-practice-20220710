@@ -572,22 +572,24 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
+	// 科目の講義一覧
+	courseClassesMap := map[string][]Class{}
+	var classes []Class
+	err = h.DB.Select(&classes, "SELECT classes.* FROM registrations INNER JOIN courses ON registrations.course_id = courses.id INNER JOIN classes ON courses.id = classes.course_id WHERE user_id = ? ORDER BY classes.part DESC", userID)
+	if err != nil {
+		c.Logger().Error(err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+	for _, c := range classes {
+		courseClassesMap[c.CourseID] = append(courseClassesMap[c.CourseID], c)
+	}
 
 	// 科目毎の成績計算処理
 	courseResults := make([]CourseResult, 0, len(registeredCourses))
 	myGPA := 0.0
 	myCredits := 0
 	for _, course := range registeredCourses {
-		// 講義一覧の取得
-		var classes []Class
-		query = "SELECT *" +
-			" FROM `classes`" +
-			" WHERE `course_id` = ?" +
-			" ORDER BY `part` DESC"
-		if err := h.DB.Select(&classes, query, course.ID); err != nil {
-			c.Logger().Error(err)
-			return c.NoContent(http.StatusInternalServerError)
-		}
+		classes = courseClassesMap[course.ID]
 
 		// 講義毎の成績計算処理
 		classScores := make([]ClassScore, 0, len(classes))
