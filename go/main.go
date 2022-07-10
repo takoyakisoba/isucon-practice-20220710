@@ -600,6 +600,23 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		classSubmissionCountMap[classId] = submissionCount
 	}
 
+	// スコア
+	classScoreMap := map[string]int{}
+	rows, err = h.DB.Queryx("SELECT class_id, score FROM submissions WHERE user_id = ? AND score IS NOT NULL", userID)
+	if err != nil {
+		c.Logger().Error(err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+	for rows.Next() {
+		var classId string
+		var score int
+		if err := rows.Scan(&classId, &score); err != nil {
+			c.Logger().Error(err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+		classScoreMap[classId] = score
+	}
+
 	// 科目毎の成績計算処理
 	courseResults := make([]CourseResult, 0, len(registeredCourses))
 	myGPA := 0.0
@@ -612,27 +629,23 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		var myTotalScore int
 		for _, class := range classes {
 			submissionsCount := classSubmissionCountMap[class.ID]
+			myScore, exist := classScoreMap[class.ID]
 
-			var myScore sql.NullInt64
-			if err := h.DB.Get(&myScore, "SELECT `submissions`.`score` FROM `submissions` WHERE `user_id` = ? AND `class_id` = ?", userID, class.ID); err != nil && err != sql.ErrNoRows {
-				c.Logger().Error(err)
-				return c.NoContent(http.StatusInternalServerError)
-			} else if err == sql.ErrNoRows || !myScore.Valid {
+			if exist {
+				myTotalScore += myScore
+				classScores = append(classScores, ClassScore{
+					ClassID:    class.ID,
+					Part:       class.Part,
+					Title:      class.Title,
+					Score:      &myScore,
+					Submitters: submissionsCount,
+				})
+			} else {
 				classScores = append(classScores, ClassScore{
 					ClassID:    class.ID,
 					Part:       class.Part,
 					Title:      class.Title,
 					Score:      nil,
-					Submitters: submissionsCount,
-				})
-			} else {
-				score := int(myScore.Int64)
-				myTotalScore += score
-				classScores = append(classScores, ClassScore{
-					ClassID:    class.ID,
-					Part:       class.Part,
-					Title:      class.Title,
-					Score:      &score,
 					Submitters: submissionsCount,
 				})
 			}
