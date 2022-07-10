@@ -618,6 +618,7 @@ func (h *handlers) GetGrades(c echo.Context) error {
 			var myScore sql.NullInt64
 			CacheClassScoreMutex.Lock()
 			if tmpClassScore, ok := CacheClassScore[userID+"_"+class.ID]; ok {
+				myTotalScore += *tmpClassScore.Score
 				classScores = append(classScores, tmpClassScore)
 				CacheClassScoreMutex.Unlock()
 				continue
