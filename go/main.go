@@ -591,7 +591,7 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		// 講義一覧の取得
 		var classes []ClassByCount
 		query = "SELECT " +
-			"`classes`.*,COUNT(DISTINCT `submissions.user_id`) AS count_submissions " +
+			"`classes`.*,COUNT(DISTINCT `submissions`.`user_id`) AS count_submissions " +
 			"FROM `classes` " +
 			"LEFT JOIN `submissions` ON `submissions`.`class_id` = `classes`.`id` " +
 			"WHERE `course_id` = ? " +
