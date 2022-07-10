@@ -32,7 +32,7 @@ save-log:
 	mkdir /home/isucon/logs/$(TS)
 	sudo  cp -p /var/log/nginx/access.log  /home/isucon/logs/$(TS)/access.log
 	ssh isucon@172.31.23.8 "sudo  cp -p /var/log/mysql/mysql-slow.log /home/isucon/mysql-slow.log && sudo chmod -R 777 mysql-slow.log"
-    scp isucon@172.31.23.8:~/mysql-slow.log /home/isucon/logs/$(TS)/mysql-slow.log
+	scp isucon@172.31.23.8:~/mysql-slow.log /home/isucon/logs/$(TS)/mysql-slow.log
 	sudo chmod -R 777 /home/isucon/logs/*
 sync-log:
 	scp -C kataribe.toml ubuntu@172.31.43.190:~/
