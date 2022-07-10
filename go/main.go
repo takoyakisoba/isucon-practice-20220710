@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-sql-driver/mysql"
 	"github.com/gorilla/sessions"
@@ -45,7 +46,9 @@ func main() {
 	e.Use(session.Middleware(sessions.NewCookieStore([]byte("trapnomura"))))
 
 	db, _ := GetDB(false)
-	db.SetMaxOpenConns(10)
+	db.SetMaxIdleConns(100) // 小さくしても良い
+	db.SetMaxOpenConns(100)
+	db.SetConnMaxLifetime(120 * time.Second)
 
 	h := &handlers{
 		DB: db,

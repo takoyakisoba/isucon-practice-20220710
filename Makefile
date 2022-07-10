@@ -1,10 +1,9 @@
-.PHONY: gogo build stop-services start-services truncate-logs bench
+.PHONY: gogo build stop-services start-services truncate-logs bench kataribe
 
 gogo: stop-services build truncate-logs start-services bench
 
 build:
-	cd go make all
-	../
+	cd go && make all
 
 stop-services:
 	sudo systemctl stop nginx
@@ -22,7 +21,7 @@ truncate-logs:
 	ssh isucon@172.31.23.8 "sudo truncate --size 0 /var/log/mysql/mysql-slow.log"
 
 kataribe:
-	cd ../ && sudo cat /var/log/nginx/access.log | ./kataribe
+	sudo cat /var/log/nginx/access.log | ./kataribe -conf ~/kataribe.toml
 
 bench:
 	ssh isucon@172.31.28.181 "cd benchmarker && ./bin/benchmarker -target=sub.mishima.tokyo -tls"

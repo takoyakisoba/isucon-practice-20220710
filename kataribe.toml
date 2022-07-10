@@ -88,6 +88,14 @@ duration_index = 10
 # For overview of regexp syntax: https://golang.org/pkg/regexp/syntax/
 #
 [[bundle]]
+regexp = 'GET /api/courses/[A-Z0-9]+'
+name = 'GET /api/courses/[A-Z0-9]+'
+
+[[bundle]]
+regexp = 'GET /api/courses\?.*'
+name = 'GET /api/courses?$queryParams'
+
+[[bundle]]
 regexp = 'GET /api/courses/[A-Z0-9]+/classes'
 name = 'GET /api/courses/[A-Z0-9]+/classes'
 
@@ -98,14 +106,22 @@ name = 'POST /api/courses/[A-Z0-9]+/classes'
 [[bundle]]
 regexp = 'GET /api/announcements/[A-Z0-9]+(.*)?'
 name = 'GET /api/announcements/[A-Z0-9]+'
-#
+
+[[bundle]]
+regexp = 'GET /api/announcements(\?page=[0-9]+)?'
+name = 'GET /api/announcements'
+
+[[bundle]]
+regexp = 'PUT /api/courses/[A-Z0-9]+/classes/[A-Z0-9]+/assignments/scores'
+name = 'PUT /api/courses/[A-Z0-9]+/classes/[A-Z0-9]+/assignments/scores'
+
+[[bundle]]
+regexp = 'PUT /api/courses/[A-Z0-9]+/status'
+name = 'PUT /api/courses/[A-Z0-9]+/status'
+
 #[[bundle]]
-#regexp = '^(GET|HEAD) /stylesheets/'
-#name = 'GET /stylesheets/*'
-#
-#[[bundle]]
-#regexp = '^(GET|HEAD) /images/'
-#name = 'GET /images/*'
+#regexp = ''
+#name = ''
 
 ################################################################################
 # Replace
