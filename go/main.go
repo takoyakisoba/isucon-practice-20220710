@@ -2,7 +2,6 @@ package main
 
 import (
 	"archive/zip"
-	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
