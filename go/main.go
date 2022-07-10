@@ -1,6 +1,8 @@
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -1315,7 +1317,7 @@ func (h *handlers) DownloadSubmittedAssignments(c echo.Context) error {
 	}
 
 	zipFilePath := AssignmentsDirectory + classID + ".zip"
-	if err := createSubmissionsZip(zipFilePath, classID, submissions); err != nil {
+	if err := msmZip(zipFilePath, classID, submissions); err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
@@ -1346,8 +1348,40 @@ func createSubmissionsZip(zipFilePath string, classID string, submissions []Subm
 	// -i 'tmpDir/*': 空zipを許す
 	return exec.Command("zip", "-j", "-r", zipFilePath, tmpDir, "-i", tmpDir+"*").Run()
 }
+func msmZip(zipFilePath string, classID string, submissions []Submission) error {
+	file, err := os.Create(zipFilePath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
 
-// ---------- Announcement API ----------
+	zipWriter := zip.NewWriter(file)
+	defer zipWriter.Close()
+
+	// ファイル名を指定の形式に変更
+	for _, submission := range submissions {
+		header := &zip.FileHeader{
+			Name: submission.UserCode+"-"+submission.FileName,
+			Method: zip.Store,
+		}
+		f, err := zipWriter.CreateHeader(header);
+		if err != nil {
+			return err
+		}
+		buf, err := os.Open(AssignmentsDirectory+classID+"-"+submission.UserID+".pdf")
+		if err != nil {
+			return err
+		}
+		io.Copy(f, buf)
+		buf.Close()
+	}
+
+
+	return nil
+}
+
+
+	// ---------- Announcement API ----------
 
 type AnnouncementWithoutDetail struct {
 	ID         string `json:"id" db:"id"`
