@@ -564,6 +564,8 @@ type ClassScore struct {
 	Submitters int    `json:"submitters"` // 提出した学生数
 }
 
+var CacheSubmissions map[string]ClassScore
+
 // GetGrades GET /api/users/me/grades 成績取得
 func (h *handlers) GetGrades(c echo.Context) error {
 	userID, _, _, err := getUserInfo(c)
@@ -607,6 +609,11 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		var myTotalScore int
 		for _, class := range classes {
 			var myScore sql.NullInt64
+			if test, ok := CacheSubmissions[userID+"_"+class.ID]; ok {
+				classScores = append(classScores, test)
+				continue
+			}
+
 			if err := h.DB.Get(&myScore, "SELECT `submissions`.`score` FROM `submissions` WHERE `user_id` = ? AND `class_id` = ?", userID, class.ID); err != nil && err != sql.ErrNoRows {
 				c.Logger().Error(err)
 				return c.NoContent(http.StatusInternalServerError)
@@ -621,6 +628,13 @@ func (h *handlers) GetGrades(c echo.Context) error {
 			} else {
 				score := int(myScore.Int64)
 				myTotalScore += score
+				CacheSubmissions[userID+"_"+class.ID] = ClassScore{
+					ClassID:    class.ID,
+					Part:       class.Part,
+					Title:      class.Title,
+					Score:      &score,
+					Submitters: class.CountSubmissions,
+				}
 				classScores = append(classScores, ClassScore{
 					ClassID:    class.ID,
 					Part:       class.Part,
