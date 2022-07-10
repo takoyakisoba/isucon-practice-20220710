@@ -518,6 +518,16 @@ type Class struct {
 	SubmissionClosed bool   `db:"submission_closed"`
 }
 
+type ClassByCount struct {
+	ID               string `db:"id"`
+	CourseID         string `db:"course_id"`
+	Part             uint8  `db:"part"`
+	Title            string `db:"title"`
+	Description      string `db:"description"`
+	SubmissionClosed bool   `db:"submission_closed"`
+	CountSubmissions int    `db:"count_submissions"`
+}
+
 type GetGradeResponse struct {
 	Summary       Summary        `json:"summary"`
 	CourseResults []CourseResult `json:"courses"`
@@ -576,10 +586,13 @@ func (h *handlers) GetGrades(c echo.Context) error {
 	myCredits := 0
 	for _, course := range registeredCourses {
 		// 講義一覧の取得
-		var classes []Class
-		query = "SELECT *" +
+		var classes []ClassByCount
+		query = "SELECT " +
+			"classes.id AS id, classes.course_id, classes.part,classes.title,classes.description,classes.submission_closed,COUNT(DISTINCT submissions.id) AS count_submissions" +
 			" FROM `classes`" +
+			"JOIN submissions ON submissions.class_id = classes.id" +
 			" WHERE `course_id` = ?" +
+			"GROUP BY 1,2,3,4,5,6" +
 			" ORDER BY `part` DESC"
 		if err := h.DB.Select(&classes, query, course.ID); err != nil {
 			c.Logger().Error(err)
@@ -590,12 +603,6 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		classScores := make([]ClassScore, 0, len(classes))
 		var myTotalScore int
 		for _, class := range classes {
-			var submissionsCount int
-			if err := h.DB.Get(&submissionsCount, "SELECT COUNT(*) FROM `submissions` WHERE `class_id` = ?", class.ID); err != nil {
-				c.Logger().Error(err)
-				return c.NoContent(http.StatusInternalServerError)
-			}
-
 			var myScore sql.NullInt64
 			if err := h.DB.Get(&myScore, "SELECT `submissions`.`score` FROM `submissions` WHERE `user_id` = ? AND `class_id` = ?", userID, class.ID); err != nil && err != sql.ErrNoRows {
 				c.Logger().Error(err)
@@ -606,7 +613,7 @@ func (h *handlers) GetGrades(c echo.Context) error {
 					Part:       class.Part,
 					Title:      class.Title,
 					Score:      nil,
-					Submitters: submissionsCount,
+					Submitters: class.CountSubmissions,
 				})
 			} else {
 				score := int(myScore.Int64)
@@ -616,7 +623,7 @@ func (h *handlers) GetGrades(c echo.Context) error {
 					Part:       class.Part,
 					Title:      class.Title,
 					Score:      &score,
-					Submitters: submissionsCount,
+					Submitters: class.CountSubmissions,
 				})
 			}
 		}
