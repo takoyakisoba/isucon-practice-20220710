@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-sql-driver/mysql"
@@ -59,7 +60,7 @@ func main() {
 	e.POST("/login", h.Login)
 	e.POST("/logout", h.Logout)
 	// キャッシュの初期化
-	CacheSubmissions = map[string]ClassScore{}
+	CacheClassScore = map[string]ClassScore{}
 
 	API := e.Group("/api", h.IsLoggedIn)
 	{
@@ -567,7 +568,10 @@ type ClassScore struct {
 	Submitters int    `json:"submitters"` // 提出した学生数
 }
 
-var CacheSubmissions map[string]ClassScore
+var CacheClassScore map[string]ClassScore
+var CacheClassScoreMutex struct {
+	sync.Mutex
+}
 
 // GetGrades GET /api/users/me/grades 成績取得
 func (h *handlers) GetGrades(c echo.Context) error {
@@ -612,7 +616,7 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		var myTotalScore int
 		for _, class := range classes {
 			var myScore sql.NullInt64
-			if test, ok := CacheSubmissions[userID+"_"+class.ID]; ok {
+			if test, ok := CacheClassScore[userID+"_"+class.ID]; ok {
 				classScores = append(classScores, test)
 				continue
 			}
@@ -631,13 +635,15 @@ func (h *handlers) GetGrades(c echo.Context) error {
 			} else {
 				score := int(myScore.Int64)
 				myTotalScore += score
-				CacheSubmissions[userID+"_"+class.ID] = ClassScore{
+				CacheClassScoreMutex.Lock()
+				CacheClassScore[userID+"_"+class.ID] = ClassScore{
 					ClassID:    class.ID,
 					Part:       class.Part,
 					Title:      class.Title,
 					Score:      &score,
 					Submitters: class.CountSubmissions,
 				}
+				CacheClassScoreMutex.Unlock()
 				classScores = append(classScores, ClassScore{
 					ClassID:    class.ID,
 					Part:       class.Part,
