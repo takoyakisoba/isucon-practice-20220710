@@ -1,10 +1,9 @@
-.PHONY: gogo build stop-services start-services truncate-logs bench
+.PHONY: gogo build stop-services start-services truncate-logs bench kataribe
 
 gogo: stop-services build truncate-logs start-services bench
 
 build:
-	cd go make all
-	../
+	cd go && make all
 
 stop-services:
 	sudo systemctl stop nginx
