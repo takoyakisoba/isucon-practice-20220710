@@ -1,11 +1,13 @@
 package main
 
 import (
+	"archive/zip"
 	"bufio"
 	"database/sql"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
@@ -1348,27 +1350,44 @@ func (h *handlers) DownloadSubmittedAssignments(c echo.Context) error {
 }
 
 func createSubmissionsZip(zipFilePath string, classID string, submissions []Submission) error {
-	tmpDir := AssignmentsDirectory + classID + "/"
-	if err := exec.Command("rm", "-rf", tmpDir).Run(); err != nil {
-		return err
-	}
-	if err := exec.Command("mkdir", tmpDir).Run(); err != nil {
-		return err
-	}
-
-	// ファイル名を指定の形式に変更
+	//tmpDir := AssignmentsDirectory + classID + "/"
+	//if err := exec.Command("rm", "-rf", tmpDir).Run(); err != nil {
+	//	return err
+	//}
+	//if err := exec.Command("mkdir", tmpDir).Run(); err != nil {
+	//	return err
+	//}
+	//
+	//// ファイル名を指定の形式に変更
+	//for _, submission := range submissions {
+	//	if err := exec.Command(
+	//		"cp",
+	//		AssignmentsDirectory+classID+"-"+submission.UserID+".pdf",
+	//		tmpDir+submission.UserCode+"-"+submission.FileName,
+	//	).Run(); err != nil {
+	//		return err
+	//	}
+	//}
+	file, _ := os.Create(zipFilePath)
+	defer file.Close()
+	w := zip.NewWriter(file)
+	f, _ := w.Create(zipFilePath)
 	for _, submission := range submissions {
-		if err := exec.Command(
-			"cp",
-			AssignmentsDirectory+classID+"-"+submission.UserID+".pdf",
-			tmpDir+submission.UserCode+"-"+submission.FileName,
-		).Run(); err != nil {
+		of, err := os.Open(AssignmentsDirectory + classID + "-" + submission.UserID + ".pdf")
+		defer of.Close()
+		if err != nil {
 			return err
 		}
+		content, err := ioutil.ReadAll(of) // 全部読み込んでくれる
+		if err != nil {
+			return err
+		}
+		_, _ = f.Write(content)
 	}
 
+	return nil
 	// -i 'tmpDir/*': 空zipを許す
-	return exec.Command("zip", "-j", "-r", zipFilePath, tmpDir, "-i", tmpDir+"*").Run()
+	//return exec.Command("zip", "-j", "-r", zipFilePath, tmpDir, "-i", tmpDir+"*").Run()
 }
 
 // ---------- Announcement API ----------
