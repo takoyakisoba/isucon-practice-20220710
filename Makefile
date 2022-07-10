@@ -21,7 +21,7 @@ truncate-logs:
 	ssh isucon@172.31.23.8 "sudo truncate --size 0 /var/log/mysql/mysql-slow.log"
 
 kataribe:
-	cd ../ && sudo cat /var/log/nginx/access.log | ./kataribe
+	sudo cat /var/log/nginx/access.log | ./kataribe -conf ~/kataribe.toml
 
 bench:
 	ssh isucon@172.31.28.181 "cd benchmarker && ./bin/benchmarker -target=sub.mishima.tokyo -tls"
