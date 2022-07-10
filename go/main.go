@@ -617,12 +617,12 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		for _, class := range classes {
 			var myScore sql.NullInt64
 			CacheClassScoreMutex.Lock()
-			if test, ok := CacheClassScore[userID+"_"+class.ID]; ok {
-				myTotalScore += *test.Score
-				classScores = append(classScores, test)
+			if tmpClassScore, ok := CacheClassScore[userID+"_"+class.ID]; ok {
+				classScores = append(classScores, tmpClassScore)
 				CacheClassScoreMutex.Unlock()
 				continue
 			}
+			CacheClassScoreMutex.Unlock()
 
 			if err := h.DB.Get(&myScore, "SELECT `submissions`.`score` FROM `submissions` WHERE `user_id` = ? AND `class_id` = ?", userID, class.ID); err != nil && err != sql.ErrNoRows {
 				c.Logger().Error(err)
