@@ -620,9 +620,9 @@ func (h *handlers) GetGrades(c echo.Context) error {
 			if test, ok := CacheClassScore[userID+"_"+class.ID]; ok {
 				myTotalScore += *test.Score
 				classScores = append(classScores, test)
+				CacheClassScoreMutex.Unlock()
 				continue
 			}
-			CacheClassScoreMutex.Unlock()
 
 			if err := h.DB.Get(&myScore, "SELECT `submissions`.`score` FROM `submissions` WHERE `user_id` = ? AND `class_id` = ?", userID, class.ID); err != nil && err != sql.ErrNoRows {
 				c.Logger().Error(err)
