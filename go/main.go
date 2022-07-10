@@ -1309,7 +1309,7 @@ func (h *handlers) DownloadSubmittedAssignments(c echo.Context) error {
 		" FROM `submissions`" +
 		" JOIN `users` ON `users`.`id` = `submissions`.`user_id`" +
 		" WHERE `class_id` = ?"
-	if err := h.DB.Get(&submissions, query, classID); err != nil {
+	if err := h.DB.Select(&submissions, query, classID); err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
