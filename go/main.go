@@ -585,7 +585,17 @@ func (h *handlers) GetGrades(c echo.Context) error {
 	}
 	// 回答数
 	classSubmissionCountMap := map[string]int{}
-	rows, err := h.DB.Queryx("SELECT class_id, COUNT(*) AS submission_count FROM submissions GROUP BY class_id")
+	query = `
+		WITH registered_classes AS (
+		    SELECT classes.id AS class_id
+		    FROM registrations
+		    INNER JOIN courses ON registrations.course_id = courses.id
+			INNER JOIN classes ON classes.course_id = courses.id
+		    WHERE user_id = ?
+		)
+		SELECT class_id, COUNT(*) AS submission_count FROM submissions WHERE class_id IN (SELECT class_id FROM registered_classes) GROUP BY class_id
+	`
+	rows, err := h.DB.Queryx(query, userID)
 	if err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
