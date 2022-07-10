@@ -1,6 +1,6 @@
 .PHONY: gogo build stop-services start-services truncate-logs bench
 
-gogo: stop-services build truncate-logs start-services
+gogo: stop-services build truncate-logs start-services bench
 
 build:
 	make -C go all
@@ -24,4 +24,4 @@ kataribe:
 	cd ../ && sudo cat /var/log/nginx/access.log | ./kataribe
 
 bench:
-	cd ../benchmarker && ./bin/benchmarker -target=sub.mishima.tokyo -tls
+	ssh isucon@172.31.28.181 "cd benchmarker && ./bin/benchmarker -target=sub.mishima.tokyo -tls"
