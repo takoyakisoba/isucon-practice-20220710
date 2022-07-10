@@ -683,11 +683,11 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
-	var scoreByUserId map[string]int
+	var scoreByUserId = make(map[string]int)
 	for _, user := range scoreByUser {
 		scoreByUserId[user.UserID] = user.ScoreTotal
 	}
-	var coursesByUserId map[string]int
+	var coursesByUserId = make(map[string]int)
 	for _, user := range coursesByUser {
 		coursesByUserId[user.UserID] = user.CreditTotal
 	}
