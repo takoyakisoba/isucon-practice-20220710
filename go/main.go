@@ -672,13 +672,13 @@ func (h *handlers) GetGrades(c echo.Context) error {
 	// GPAの統計値
 	// 一つでも修了した科目がある学生のGPA一覧
 	var coursesByUser []CoursesByUser
-	query = "SELECT users.id, SUM(c.credit) AS total_credit FROM users JOIN registrations r on users.id = r.user_id JOIN courses c on r.course_id = c.id AND  c.`status`='closed' GROUP BY users.id;"
+	query = "SELECT users.id AS user_id, SUM(c.credit) AS credit_total FROM users JOIN registrations r on users.id = r.user_id JOIN courses c on r.course_id = c.id AND  c.`status`='closed' GROUP BY users.id;"
 	if err := h.DB.Select(&coursesByUser, query); err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
 	var scoreByUser []ScoreByUser
-	query = "SELECT `submissions`.`user_id` AS `user_id`, IFNULL(SUM(`submissions`.`score` * c2.`credit`), 0) AS gpa_score FROM `submissions` JOIN classes c on submissions.class_id = c.id JOIN courses c2 on c.course_id = c2.id AND c2.`status`='closed' GROUP BY `submissions`.`user_id`;"
+	query = "SELECT `submissions`.`user_id` AS `user_id`, IFNULL(SUM(`submissions`.`score` * c2.`credit`), 0) AS score_total FROM `submissions` JOIN classes c on submissions.class_id = c.id JOIN courses c2 on c.course_id = c2.id AND c2.`status`='closed' GROUP BY `submissions`.`user_id`;"
 	if err := h.DB.Select(&scoreByUser, query, StatusClosed, StatusClosed, Student); err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
