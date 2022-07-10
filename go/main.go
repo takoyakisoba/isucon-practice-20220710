@@ -554,6 +554,15 @@ type ClassScore struct {
 	Submitters int    `json:"submitters"` // 提出した学生数
 }
 
+type ScoreByUser struct {
+	UserID     string `db:"user_id"`
+	ScoreTotal int    `db:"score_total"`
+}
+type CoursesByUser struct {
+	UserID      string `db:"user_id"`
+	CreditTotal int    `db:"credit_total"`
+}
+
 // GetGrades GET /api/users/me/grades 成績取得
 func (h *handlers) GetGrades(c echo.Context) error {
 	userID, _, _, err := getUserInfo(c)
@@ -662,25 +671,30 @@ func (h *handlers) GetGrades(c echo.Context) error {
 
 	// GPAの統計値
 	// 一つでも修了した科目がある学生のGPA一覧
-	var gpas []float64
-	query = "SELECT IFNULL(SUM(`submissions`.`score` * `courses`.`credit`), 0) / 100 / `credits`.`credits` AS `gpa`" +
-		" FROM `users`" +
-		" JOIN (" +
-		"     SELECT `users`.`id` AS `user_id`, SUM(`courses`.`credit`) AS `credits`" +
-		"     FROM `users`" +
-		"     JOIN `registrations` ON `users`.`id` = `registrations`.`user_id`" +
-		"     JOIN `courses` ON `registrations`.`course_id` = `courses`.`id` AND `courses`.`status` = ?" +
-		"     GROUP BY `users`.`id`" +
-		" ) AS `credits` ON `credits`.`user_id` = `users`.`id`" +
-		" JOIN `registrations` ON `users`.`id` = `registrations`.`user_id`" +
-		" JOIN `courses` ON `registrations`.`course_id` = `courses`.`id` AND `courses`.`status` = ?" +
-		" LEFT JOIN `classes` ON `courses`.`id` = `classes`.`course_id`" +
-		" LEFT JOIN `submissions` ON `users`.`id` = `submissions`.`user_id` AND `submissions`.`class_id` = `classes`.`id`" +
-		" WHERE `users`.`type` = ?" +
-		" GROUP BY `users`.`id`"
-	if err := h.DB.Select(&gpas, query, StatusClosed, StatusClosed, Student); err != nil {
+	var coursesByUser []CoursesByUser
+	query = "SELECT users.id, SUM(c.credit) AS total_credit FROM users JOIN registrations r on users.id = r.user_id JOIN courses c on r.course_id = c.id AND  c.`status`='closed' GROUP BY users.id;"
+	if err := h.DB.Select(&coursesByUser, query); err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
+	}
+	var scoreByUser []ScoreByUser
+	query = "SELECT `submissions`.`user_id` AS `user_id`, IFNULL(SUM(`submissions`.`score` * c2.`credit`), 0) AS gpa_score FROM `submissions` JOIN classes c on submissions.class_id = c.id JOIN courses c2 on c.course_id = c2.id AND c2.`status`='closed' GROUP BY `submissions`.`user_id`;"
+	if err := h.DB.Select(&scoreByUser, query, StatusClosed, StatusClosed, Student); err != nil {
+		c.Logger().Error(err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+	var scoreByUserId map[string]int
+	for _, user := range scoreByUser {
+		scoreByUserId[user.UserID] = user.ScoreTotal
+	}
+	var coursesByUserId map[string]int
+	for _, user := range coursesByUser {
+		coursesByUserId[user.UserID] = user.CreditTotal
+	}
+
+	var gpas []float64
+	for s, i := range scoreByUserId {
+		gpas = append(gpas, float64(i)/100/float64(coursesByUserId[s]))
 	}
 
 	res := GetGradeResponse{
