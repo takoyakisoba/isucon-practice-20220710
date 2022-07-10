@@ -617,6 +617,7 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		for _, class := range classes {
 			var myScore sql.NullInt64
 			if test, ok := CacheClassScore[userID+"_"+class.ID]; ok {
+				myTotalScore += *test.Score
 				classScores = append(classScores, test)
 				continue
 			}
