@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -1165,7 +1166,19 @@ func (h *handlers) SubmitAssignment(c echo.Context) error {
 	}
 
 	dst := AssignmentsDirectory + classID + "-" + userID + ".pdf"
-	if err := os.WriteFile(dst, data, 0666); err != nil {
+	f, err := os.Create(dst)
+	defer f.Close()
+	if err != nil {
+		return err
+	}
+	fw := bufio.NewWriter(f)
+	_, err = fw.Write(data)
+	if err != nil {
+		c.Logger().Error(err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+	err = fw.Flush()
+	if err != nil {
 		c.Logger().Error(err)
 		return c.NoContent(http.StatusInternalServerError)
 	}
