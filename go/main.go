@@ -554,6 +554,11 @@ type ClassScore struct {
 	Submitters int    `json:"submitters"` // 提出した学生数
 }
 
+type ClassSubmissionsCount struct{
+	ClassId string
+	Count int
+}
+
 // GetGrades GET /api/users/me/grades 成績取得
 func (h *handlers) GetGrades(c echo.Context) error {
 	userID, _, _, err := getUserInfo(c)
@@ -587,6 +592,22 @@ func (h *handlers) GetGrades(c echo.Context) error {
 		if err := h.DB.Select(&classes, query, course.ID); err != nil {
 			c.Logger().Error(err)
 			return c.NoContent(http.StatusInternalServerError)
+		}
+
+		var classCounts []ClassSubmissionsCount
+		query, args, err := sqlx.In("SELECT COUNT(*), class_id FROM `submissions` where class_id in (?) group by class_id", classCounts)
+		if err != nil {
+			c.Logger().Error(err)
+			return c.NoContent(http.StatusInternalServerError)
+		}
+		err = sqlx.SelectContext(c, &classCounts, query, args...)
+
+		var cl map[string]ClassScore
+		for _, classCount := range classCounts{
+			cl[classCount.ClassId] = ClassScore{
+				ClassID: classCount.ClassId,
+				Submitters: classCount.Count,
+			}
 		}
 
 		// 講義毎の成績計算処理
